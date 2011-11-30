@@ -10,7 +10,6 @@
 #include "llvm/Module.h"
 #include "llvm/ADT/SetVector.h"
 #include "llvm/Support/Dwarf.h"
-#include "llvm/TypeSymbolTable.h"
 
 #include "llbrowse/Formatting.h"
 #include "llbrowse/TreeView.h"
@@ -166,17 +165,29 @@ int ListItem::GetIcon() const {
 
 void TypeListItem::CreateChildren(
     wxTreeCtrl* tree, const wxTreeItemId & id) {
-  const TypeSymbolTable & types = module_->getTypeSymbolTable();
-  for (TypeSymbolTable::const_iterator it = types.begin(), itEnd = types.end();
-      it != itEnd; ++it) {
+  std::vector<StructType*> structTypes;
+  module_->findUsedStructTypes(structTypes);
+  for (unsigned i = 0, e = structTypes.size(); i != e; ++i) {
+    StructType *sty = structTypes[i];
+    llvm::StringRef name;
+
+    if (sty->isLiteral()) {
+      name = "literal struct";
+    } else if (sty->hasName()) {
+      name = sty->getName();
+    } else {
+      continue;
+    }
     CreateChild(tree, id,
-        new TypeItem(module_, it->second, toWxStr(it->first)));
+                new TypeItem(module_, sty, toWxStr(name)));
   }
   tree->SortChildren(id);
 }
 
 bool TypeListItem::CanCreateChildren() const {
-  return !module_->getTypeSymbolTable().empty();
+  std::vector<StructType*> structTypes;
+  module_->findUsedStructTypes(structTypes);
+  return structTypes.size() > 0;
 }
 
 //===----------------------------------------------------------------------===//

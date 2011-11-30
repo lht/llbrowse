@@ -121,10 +121,11 @@ void BrowserFrame::LoadModule(const wxString & path) {
   if (mod.get() == 0) {
     std::string errs;
     raw_string_ostream errStrm(errs);
-    err.Print("llbrowse", errStrm);
+    err.print("llbrowse", errStrm);
     wxString errString = wxString::From8BitData(&*errs.begin(), errs.size());
     // Show error dialog.
-    //return 1;
+    std::cerr << errStrm.str() << std::endl;
+    abort();
   }
 
   module_.reset(mod.release());

@@ -12,10 +12,15 @@ using namespace llvm;
 
 void printType(wxTextOutputStream & out, const Module* module,
     const Type* ty, uint32_t maxDepth) {
-  std::string typeName = module->getTypeName(ty);
-  if (!typeName.empty()) {
-    out << wxString::From8BitData(&*typeName.begin(), typeName.size());
-    return;
+  if (ty->isStructTy()) {
+    const StructType* sty = cast<StructType>(ty);
+    if (sty->isLiteral() && sty->hasName()) {
+      StringRef typeName = sty->getName();
+      if (!typeName.empty()) {
+        out << toWxStr(typeName);
+        return;
+      }
+    }
   }
 
   printTypeExpansion(out, module, ty, maxDepth);
@@ -105,10 +110,6 @@ void printTypeExpansion(wxTextOutputStream & out, const Module* module,
       out << _(">");
       break;
     }
-
-    case Type::OpaqueTyID:
-      out << _("opaque");
-      break;
 
     default:
       out << _("???");
